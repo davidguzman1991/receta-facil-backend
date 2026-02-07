@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import select
 
 from app.core.db import SessionLocal
@@ -19,8 +20,8 @@ from app.models import subscription
 from app.models import vital_signs
 from app.models import audit_log
 
-ADMIN_EMAIL = "anovamedicalresearch@gmail.com"
-ADMIN_PASSWORD = "admin123"
+TARGET_EMAIL = os.getenv("RESET_EMAIL", "davidguzman.med@gmail.com")
+TEMP_PASSWORD = os.getenv("RESET_PASSWORD", "Admin123!")
 
 
 def main() -> None:
@@ -28,32 +29,25 @@ def main() -> None:
     try:
         # Buscar usuario existente
         user = db.execute(
-            select(User).where(User.email == ADMIN_EMAIL)
+            select(User).where(User.email == TARGET_EMAIL)
         ).scalar_one_or_none()
 
-        if user:
-            # Usuario existe, actualizar password
-            user.password_hash = get_password_hash(ADMIN_PASSWORD)
-            user.must_change_password = False
-            user.is_active = True
-            db.commit()
-            print(f"✅ Usuario actualizado.")
-        else:
-            # Usuario no existe, crear nuevo
-            new_user = User(
-                email=ADMIN_EMAIL,
-                password_hash=get_password_hash(ADMIN_PASSWORD),
-                role="doctor",
-                is_active=True,
-                must_change_password=False,
-            )
-            db.add(new_user)
-            db.commit()
-            print(f"✅ Usuario creado.")
+        if not user:
+            print("❌ User not found")
+            print(f"Email: {TARGET_EMAIL}")
+            return
 
-        print(f"📧 Email: {ADMIN_EMAIL}")
-        print(f"🔑 Password: {ADMIN_PASSWORD}")
-        print(f"\n✅ Usuario admin listo. Email: {ADMIN_EMAIL} | Password: {ADMIN_PASSWORD}")
+        print("✅ User found")
+        print(f"Email: {user.email}")
+
+        user.password_hash = get_password_hash(TEMP_PASSWORD)
+        user.must_change_password = False
+        user.is_active = True
+        db.add(user)
+        db.commit()
+
+        print("✅ Email reset")
+        print("Password reset successful")
 
     except Exception as e:
         db.rollback()
