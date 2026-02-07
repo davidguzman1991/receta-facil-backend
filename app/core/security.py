@@ -13,6 +13,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica una contraseña contra su hash."""
     encoded = plain_password.encode("utf-8")
     if len(encoded) > 72:
+        # bcrypt solo considera los primeros 72 bytes del password; truncamos para garantizar
+        # consistencia entre hashing y verificación y evitar comportamientos inesperados.
         plain_password = encoded[:72].decode("utf-8", errors="ignore")
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -21,6 +23,8 @@ def get_password_hash(password: str) -> str:
     """Genera el hash de una contraseña. Solo debe recibir la contraseña del usuario."""
     encoded = password.encode("utf-8")
     if len(encoded) > 72:
+        # bcrypt solo considera los primeros 72 bytes del password; truncamos para garantizar
+        # consistencia entre hashing y verificación y evitar comportamientos inesperados.
         password = encoded[:72].decode("utf-8", errors="ignore")
     return pwd_context.hash(password)
 

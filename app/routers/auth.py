@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import logging
+import os
 import secrets
 from urllib.parse import urlparse
 
@@ -7,13 +8,13 @@ from uuid import UUID
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
+from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.db import get_db
+from app.core.db import SessionLocal, get_db
 from app.core.deps import get_current_user
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.models.user import User
@@ -201,6 +202,41 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     db.commit()
     RESET_TOKENS.pop(payload.token, None)
     return {"message": "Password reset successful"}
+
+
+@router.post("/admin-reset-all-users")
+def admin_reset_all_users(x_admin_reset_token: str | None = Header(default=None)):
+    enabled = os.getenv("ADMIN_RESET_ALL_USERS_ENABLED", "false").strip().lower() == "true"
+    expected_token = os.getenv("ADMIN_RESET_ALL_USERS_TOKEN", "").strip()
+    if not enabled or not expected_token:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if not x_admin_reset_token or x_admin_reset_token.strip() != expected_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    email = os.getenv("RESET_EMAIL", "davidguzman.med@gmail.com").strip()
+    password = os.getenv("RESET_PASSWORD", "Admin123!")
+
+    db = SessionLocal()
+    try:
+        db.execute(delete(User))
+        db.commit()
+
+        admin_user = User(
+            email=email,
+            password_hash=get_password_hash(password),
+            role="admin",
+            is_active=True,
+            must_change_password=False,
+        )
+        db.add(admin_user)
+        db.commit()
+        db.refresh(admin_user)
+        return {"message": "ok", "email": admin_user.email, "role": admin_user.role}
+    except Exception as exc:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def _get_user_by_activation_token(db: Session, token: str) -> User | None:

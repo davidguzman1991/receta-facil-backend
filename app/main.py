@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.db import Base, SessionLocal, engine
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 from app.models.user import User
 from app.routers import auth, health
 from app.routers.admin import router as admin_router
@@ -102,6 +102,14 @@ def on_startup() -> None:
     Base.metadata.create_all(bind=engine)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     logger.info("App version: %s", APP_VERSION)
+    try:
+        test_hash = get_password_hash("Admin123!")
+        if verify_password("Admin123!", test_hash):
+            logger.info("CRYPTO SELF-CHECK OK")
+        else:
+            logger.error("CRYPTO SELF-CHECK FAIL")
+    except Exception:
+        logger.exception("CRYPTO SELF-CHECK FAIL")
     seed_admin_user()
     seed_doctor_demo_user()
 
