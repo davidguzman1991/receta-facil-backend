@@ -99,8 +99,8 @@ def login(
             key="rf_access_token",
             value=token,
             httponly=True,
-            secure=settings.APP_ENV.lower() == "production",
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             path="/",
         )
