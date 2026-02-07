@@ -15,7 +15,7 @@ _ensure_import_path()
 from sqlalchemy import select  # noqa: E402
 
 from app.core.db import SessionLocal  # noqa: E402
-from app.core.security import get_password_hash  # noqa: E402
+from app.core.security import get_password_hash, verify_password  # noqa: E402
 from app.models.user import User  # noqa: E402
 
 
@@ -28,20 +28,25 @@ def main() -> int:
     try:
         user = db.execute(select(User).where(User.email == TARGET_EMAIL)).scalar_one_or_none()
         if not user:
-            print(f"User not found: {TARGET_EMAIL}")
-            return 2
+            raise RuntimeError(f"User not found: {TARGET_EMAIL}")
 
-        user.password_hash = get_password_hash(NEW_PASSWORD)
+        new_hash = get_password_hash(NEW_PASSWORD)
+        user.password_hash = new_hash
         db.add(user)
         db.commit()
+        db.refresh(user)
 
-        print(f"User found: {TARGET_EMAIL}")
-        print("Password reset successful")
+        if not verify_password(NEW_PASSWORD, user.password_hash):
+            raise RuntimeError(
+                f"CASCADE FAIL → Hash verification failed for {TARGET_EMAIL}. "
+                "Password not updated safely."
+            )
+
+        print(f"CASCADE OK → Password reset & verified for {TARGET_EMAIL}")
         return 0
     except Exception as exc:
         db.rollback()
-        print(f"Error: {exc}")
-        return 1
+        raise
     finally:
         db.close()
 
