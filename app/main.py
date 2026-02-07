@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,10 +28,12 @@ from app.routers.prescriptions import router as prescriptions_router
 logger = logging.getLogger(__name__)
 APP_VERSION = "2026-01-31-login-fix"
 
+vercel_origin_regex = r"^https://receta-facil-frontend-.*\.vercel\.app$"
+
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://TU_DOMINIO_FRONTEND.com",
+    "https://receta-facil-frontend.vercel.app",
 ]
 
 app = FastAPI(
@@ -43,6 +46,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=vercel_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,7 +68,7 @@ def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled exception: %s", exc)
     origin = request.headers.get("origin", "")
     cors_headers = {}
-    if origin in origins:
+    if origin in origins or (origin and re.match(vercel_origin_regex, origin)):
         cors_headers["Access-Control-Allow-Origin"] = origin
         cors_headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(
