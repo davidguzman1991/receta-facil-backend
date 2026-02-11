@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,11 +28,25 @@ from app.routers.prescriptions import router as prescriptions_router
 logger = logging.getLogger(__name__)
 APP_VERSION = "2026-01-31-login-fix"
 
+_frontend_origins_env = os.getenv("FRONTEND_ORIGINS", "")
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://receta-facil-frontend.vercel.app",
 ]
+origins.extend(
+    [o.strip() for o in _frontend_origins_env.split(",") if o.strip()]
+)
+
+_vercel_origin_regex = os.getenv("FRONTEND_ORIGIN_REGEX", r"^https://.*\\.vercel\\.app$")
+_vercel_origin_re = re.compile(_vercel_origin_regex)
+
+
+def _is_allowed_origin(origin: str) -> bool:
+    if not origin:
+        return False
+    if origin in origins:
+        return True
+    return bool(_vercel_origin_re.match(origin))
 
 app = FastAPI(
     title="Receta Facil API",
@@ -43,6 +58,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=_vercel_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,7 +80,7 @@ def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled exception: %s", exc)
     origin = request.headers.get("origin", "")
     cors_headers = {}
-    if origin in origins:
+    if _is_allowed_origin(origin):
         cors_headers["Access-Control-Allow-Origin"] = origin
         cors_headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(
