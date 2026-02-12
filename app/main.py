@@ -126,6 +126,21 @@ def on_startup() -> None:
     seed_admin_user()
     seed_doctor_demo_user()
 
+    if os.getenv("AUTO_SEED_ICD10", "false").strip().lower() == "true":
+        try:
+            from app.models.icd10 import ICD10
+            from app.scripts.seed_icd10 import seed_icd10
+
+            db = SessionLocal()
+            try:
+                count = db.execute(select(ICD10)).scalars().first()
+            finally:
+                db.close()
+            if count is None:
+                seed_icd10()
+        except Exception:
+            logger.exception("ICD10 auto-seed failed")
+
 
 def seed_doctor_demo_user() -> None:
     """Crea usuario médico de prueba: doctor@demo.com / 123456 (solo si no existe)."""

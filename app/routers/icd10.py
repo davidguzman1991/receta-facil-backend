@@ -10,6 +10,12 @@ router = APIRouter(prefix="/icd10", tags=["ICD10"])
 
 @router.get("/search")
 def search_icd10(q: str, db: Session = Depends(get_db)):
+    """Busca códigos ICD-10 por descripción.
+
+    Nota: si este endpoint devuelve [] en producción, normalmente es porque la tabla
+    `icd10` está vacía y debe cargarse ejecutando el seed manual:
+    `python -m app.scripts.seed_icd10`.
+    """
     stmt = (
         select(ICD10)
         .where(ICD10.description.ilike(f"%{q}%"))
