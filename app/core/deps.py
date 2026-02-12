@@ -14,7 +14,9 @@ from app.models.user import User
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
-    token = request.cookies.get("rf_access_token")
+    token = request.cookies.get("access_token")
+    if not token:
+        token = request.cookies.get("rf_access_token")
     if not token and request.headers.get("authorization"):
         auth = request.headers["authorization"]
         if auth.startswith("Bearer "):

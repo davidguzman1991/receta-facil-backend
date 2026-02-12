@@ -95,15 +95,16 @@ def login(
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
 
         token = create_access_token(sub=str(user.id), role=user.role)
-        response.set_cookie(
-            key="rf_access_token",
-            value=token,
-            httponly=True,
-            secure=True,
-            samesite="none",
-            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            path="/",
-        )
+        cookie_kwargs = {
+            "value": token,
+            "httponly": True,
+            "secure": True,
+            "samesite": "none",
+            "max_age": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "path": "/",
+        }
+        response.set_cookie(key="access_token", **cookie_kwargs)
+        response.set_cookie(key="rf_access_token", **cookie_kwargs)
         return LoginResponse(
             access_token=token,
             token_type="bearer",
@@ -122,6 +123,7 @@ def login(
 
 @router.post("/logout")
 def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/")
     response.delete_cookie(key="rf_access_token", path="/")
     return {"message": "Logged out"}
 

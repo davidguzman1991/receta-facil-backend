@@ -32,6 +32,7 @@ _frontend_origins_env = os.getenv("FRONTEND_ORIGINS", "")
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://receta-facil-frontend.vercel.app",
 ]
 origins.extend(
     [o.strip() for o in _frontend_origins_env.split(",") if o.strip()]
