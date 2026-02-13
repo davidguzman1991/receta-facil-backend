@@ -1,0 +1,16 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos
+.env
+.venv/
+
+# Base local
+local.db
+
+# OS
+.DS_Store
+Thumbs.db

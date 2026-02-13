@@ -1,3 +1,5 @@
+import os
+os.environ["PYTHONUTF8"] = "1"
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool

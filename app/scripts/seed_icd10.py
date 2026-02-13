@@ -16,8 +16,8 @@ def seed_icd10(csv_path: str = DEFAULT_CSV_PATH) -> tuple[int, int]:
     inserted = 0
     existed = 0
 
-    with open(csv_path, "r", encoding="utf-8", newline="") as f:
-        reader = csv.DictReader(f)
+    with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f, delimiter=";")
         db = SessionLocal()
         try:
             for row in reader:

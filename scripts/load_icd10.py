@@ -1,24 +1,27 @@
+import os
 import pandas as pd
 
 from app.core.db import Base, SessionLocal, engine
 from app.models.icd10 import ICD10
 
-EXCEL_PATH = r"C:\Users\Usuario\Downloads\CODIGOS CIE10.xlsx"
-
 
 def main() -> None:
-    # Crear todas las tablas si no existen
     Base.metadata.create_all(bind=engine)
-    
-    df = pd.read_excel(EXCEL_PATH)
+
+    BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+    csv_path = os.path.join(BASE_DIR, "data", "icd10_codes.csv")
+
+    print(f"Cargando archivo desde: {csv_path}")
+
+    df = pd.read_csv(csv_path, sep=";")
 
     db = SessionLocal()
     try:
         for _, row in df.iterrows():
-            code = str(row.get("CLAVE", "")).strip()
-            description = str(row.get("DESCRIPCIÓN", "")).strip()
+            code = str(row["code"]).strip()
+            description = str(row["description"]).strip()
 
-            if not code or not description or code.lower() == "nan" or description.lower() == "nan":
+            if not code or not description:
                 continue
 
             db.add(ICD10(code=code, description=description))
@@ -32,3 +35,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
