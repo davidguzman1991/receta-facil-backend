@@ -24,6 +24,7 @@ from app.routers.me import router as me_router
 from app.routers.patients import router as patients_router
 from app.routers.doctor_patients import router as doctor_patients_router
 from app.routers.prescriptions import router as prescriptions_router
+from app.clinical.icd10.router import router as clinical_icd10_router
 
 logger = logging.getLogger(__name__)
 APP_VERSION = "2026-01-31-login-fix"
@@ -104,6 +105,7 @@ app.include_router(consultation_medications_router, prefix="/doctor")
 app.include_router(drugs_router)
 app.include_router(prescriptions_router)
 app.include_router(icd10_router)
+app.include_router(clinical_icd10_router, prefix="/clinical")
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 if os.path.isdir("uploads"):
