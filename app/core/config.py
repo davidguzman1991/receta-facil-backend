@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str | None = None
+    AUTO_SEED_ICD10: bool = False
 
     @property
     def database_url(self):

@@ -1,4 +1,10 @@
+import sys
 import os
+
+# Add project root to PYTHONPATH
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+
 import pandas as pd
 
 from app.core.db import Base, SessionLocal, engine
