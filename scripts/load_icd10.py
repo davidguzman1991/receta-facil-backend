@@ -1,5 +1,6 @@
 import sys
 import os
+from pathlib import Path
 
 # Add project root to PYTHONPATH
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,10 +15,10 @@ from app.models.icd10 import ICD10
 def main() -> None:
     Base.metadata.create_all(bind=engine)
 
-    BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-    csv_path = os.path.join(BASE_DIR, "data", "icd10_codes.csv")
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    csv_path = BASE_DIR / "app" / "data" / "icd10_codes.csv"
 
-    print(f"Cargando archivo desde: {csv_path}")
+    print(f"Cargando archivo desde: {csv_path.resolve()}")
 
     df = pd.read_csv(csv_path, sep=";")
 
