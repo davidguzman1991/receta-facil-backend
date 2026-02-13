@@ -44,10 +44,12 @@ def _search_icd10_in_session(db: Session, query: str, limit: int = 20) -> List[I
 
     # Tiered ranking (lower is better):
     # 0: description prefix match
-    # 1: description substring match
+    # 1: substring match (either description or clinician-curated search_terms)
     # 2: trigram similarity / fuzzy
     prefix_match = ICD10.description.ilike(f"{q}%")
-    substring_match = ICD10.description.ilike(f"%{q}%")
+    description_substring_match = ICD10.description.ilike(f"%{q}%")
+    search_terms_substring_match = func.coalesce(ICD10.search_terms, "").ilike(f"%{q}%")
+    substring_match = or_(description_substring_match, search_terms_substring_match)
     rank_bucket = case(
         (prefix_match, literal(0)),
         (substring_match, literal(1)),
@@ -56,7 +58,14 @@ def _search_icd10_in_session(db: Session, query: str, limit: int = 20) -> List[I
 
     # We only compute similarity (and rely on pg_trgm) on PostgreSQL and for non-trivial queries.
     # For other DBs we keep the ordering stable without trigram.
-    similarity_score = func.similarity(ICD10.description, q) if use_trigram else literal(0.0)
+    similarity_score = (
+        func.greatest(
+            func.similarity(ICD10.description, q),
+            func.similarity(func.coalesce(ICD10.search_terms, ""), q),
+        )
+        if use_trigram
+        else literal(0.0)
+    )
 
     # A single query that:
     # - includes prefix/substring matches immediately
